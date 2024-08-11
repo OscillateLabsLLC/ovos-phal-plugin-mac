@@ -1,0 +1,4 @@
+{
+  "type": "@mikejgray/ovos-skill-projen.OVOSPHALProject",
+  "name": "ovos-phal-plugin-mac"
+}
