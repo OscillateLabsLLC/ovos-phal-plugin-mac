@@ -3,16 +3,16 @@ from setuptools import setup
 from os import walk, path
 
 BASEDIR = path.abspath(path.dirname(__file__))
-URL = "TODO: Add 'repositoryUrl' to .projenrc.json and run pj"
-plugin_CLAZZ = "TODO: Add 'skillClass' to .projenrc.json and run pj"  # needs to match __init__.py class name
+URL = "https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac"
+plugin_CLAZZ = "MacOSPlugin"  # needs to match __init__.py class name
 PYPI_NAME = "ovos-phal-plugin-mac"  # pip install PYPI_NAME
 
 # below derived from github url to ensure standard plugin_id
 plugin_AUTHOR, plugin_NAME = URL.split(".com/")[-1].split("/")
 plugin_PKG = plugin_NAME.lower().replace("-", "_")
-PLUGIN_ENTRY_POINT = f"{plugin_NAME.lower()}.{plugin_AUTHOR.lower()}={plugin_PKG}:{plugin_CLAZZ}"
+PLUGIN_ENTRY_POINT = f"{plugin_NAME.lower()}={plugin_PKG}:{plugin_CLAZZ}"
 # plugin_id=package_name:pluginClass
-BASE_PATH = BASE_PATH = path.abspath(path.join(path.dirname(__file__), "src"))
+BASE_PATH = BASE_PATH = path.abspath(path.join(path.dirname(__file__), "phal_plugin_mac"))
 
 
 def get_version():
@@ -68,14 +68,15 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url=URL,
-    author="TODO: Add 'author' to .projenrc.json and run pj",
-    author_email="TODO: Add 'authorAddress' to .projenrc.json and run pj",
-    license="# TODO: Add 'license' to .projenrc.json and run pj",
-    package_dir={plugin_PKG: "src"},
+    author="Mike Gray",
+    author_email="mike@oscillatelabs.net",
+    license="Apache-2.0",
+    package_dir={plugin_PKG: "phal_plugin_mac"},
     package_data={plugin_PKG: find_resource_files()},
     packages=[plugin_PKG],
     include_package_data=True,
     install_requires=get_requirements("requirements.txt"),
+    extras_require={"test": get_requirements("requirements-dev.txt")},
     keywords="ovos plugin voice assistant",
     entry_points={"ovos.plugin.phal": PLUGIN_ENTRY_POINT},
 )

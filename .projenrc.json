@@ -1,4 +1,11 @@
 {
   "type": "@mikejgray/ovos-skill-projen.OVOSPHALProject",
-  "name": "ovos-phal-plugin-mac"
+  "name": "phal-plugin-mac",
+  "author": "Mike Gray",
+  "authorAddress": "mike@oscillatelabs.net",
+  "authorHandle": "mikejgray",
+  "repositoryUrl": "https://github.com/OscillateLabsLLC/phal-plugin-mac",
+  "packageDir": "phal_plugin_mac",
+  "skillClass": "MacOSPlugin",
+  "license": "Apache-2.0"
 }
