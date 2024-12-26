@@ -8,7 +8,7 @@ readme = "README.md"
 authors = [{ name = "Mike Gray", email = "mike@oscillatelabs.net" }]
 license = { text = "Apache-2.0" }
 keywords = ["ovos", "plugin", "voice", "assistant"]
-requires-python = ">=3.0"
+requires-python = ">=3.9"
 dynamic = ["version", "dependencies", "optional-dependencies", "description"]
 
 [project.urls]
@@ -42,3 +42,6 @@ ovos_phal_plugin_mac = [
 
 [project.entry-points."ovos.plugin.phal"]
 ovos-phal-plugin-mac = "ovos_phal_plugin_mac:MacOSPlugin"
+
+[tool.uv]
+package = true
