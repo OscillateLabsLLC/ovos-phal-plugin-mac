@@ -2,3 +2,4 @@ ovos-utils
 ovos-bus-client
 ovos-workshop
 ovos-plugin-manager
+osascript==2020.12.3

@@ -2,6 +2,7 @@
 
 import subprocess
 
+import osascript
 from ovos_bus_client import Message
 from ovos_plugin_manager.phal import PHALPlugin
 
@@ -53,7 +54,12 @@ class MacOSPlugin(PHALPlugin):
 
     def _run_applescript(self, script):
         """Private method to run AppleScript."""
-        return self._run_command(["osascript", "-e", script])
+        return_code, out, err = osascript.run(script)
+        self.log.debug("Return code for %s was %s", script, return_code)
+        if return_code and return_code > 0:
+            self.log.error("Error code %s running AppleScript: %s", return_code, err)
+            return
+        return out
 
     def _set_volume(self, volume):
         """Set the system volume (0-100)."""
@@ -64,13 +70,16 @@ class MacOSPlugin(PHALPlugin):
         """Get the current system volume (0-100)."""
         script = "output volume of (get volume settings)"
         result = self._run_applescript(script)
-        return int(result.stdout.strip()) if result else None
+        self.log.debug("Current volume: %s", result)
+        return int(result) if result else None
 
     def _is_muted(self):
         """Check if the system is muted."""
         script = "output muted of (get volume settings)"
         result = self._run_applescript(script)
-        return result.stdout.strip().lower() == "true"
+        if not result:
+            return False
+        return "true" in result.lower()
 
     def _set_mute(self, mute):
         """Set the system mute state."""
@@ -222,7 +231,9 @@ class MacOSPlugin(PHALPlugin):
             self.log.exception("OVOS service request restart failed", err)
             self.bus.emit(message.forward("system.mycroft.service.restart.failed"))
 
+
 if __name__ == "__main__":
     from ovos_utils.fakebus import FakeBus
+
     plugin = MacOSPlugin(bus=FakeBus())
     print("BREAK")

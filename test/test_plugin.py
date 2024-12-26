@@ -164,7 +164,7 @@ def test_run_command(mock_run, plugin):
 
 @patch("phal_plugin_mac.MacOSPlugin._run_applescript")
 def test_get_volume(mock_run_applescript, plugin):
-    mock_run_applescript.return_value = MagicMock(stdout="50\n")
+    mock_run_applescript.return_value = 50
     volume = plugin._get_volume()
     mock_run_applescript.assert_called_once_with("output volume of (get volume settings)")
     assert volume == 50
@@ -178,7 +178,7 @@ def test_set_volume(mock_run_applescript, plugin):
 
 @patch("phal_plugin_mac.MacOSPlugin._run_applescript")
 def test_is_muted(mock_run_applescript, plugin):
-    mock_run_applescript.return_value = MagicMock(stdout="true\n")
+    mock_run_applescript.return_value = "true"
     assert plugin._is_muted() is True
     mock_run_applescript.assert_called_once_with("output muted of (get volume settings)")
 

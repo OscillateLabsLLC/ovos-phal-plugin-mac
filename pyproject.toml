@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ovos-phal-plugin-mac"
+readme = "README.md"
+authors = [{ name = "Mike Gray", email = "mike@oscillatelabs.net" }]
+license = { text = "Apache-2.0" }
+keywords = ["ovos", "plugin", "voice", "assistant"]
+requires-python = ">=3.0"
+dynamic = ["version", "dependencies", "optional-dependencies", "description"]
+
+[project.urls]
+Homepage = "https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac"
+Repository = "https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac"
+
+[tool.setuptools]
+package-dir = { "ovos_phal_plugin_mac" = "phal_plugin_mac" }
+packages = ["ovos_phal_plugin_mac"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements/requirements.txt"] }
+optional-dependencies = { test = { file = [
+    "requirements/requirements-dev.txt",
+] } }
+description = { file = "README.md" }
+version = { attr = "phal_plugin_mac.version.__version__" }
+
+[tool.setuptools.package-data]
+ovos_phal_plugin_mac = [
+    "*.json",
+    "locale/*",
+    "intents/*",
+    "dialog/*",
+    "vocab/*",
+    "regex/*",
+    "ui/*",
+    "requirements/*",
+]
+
+[project.entry-points."ovos.plugin.phal"]
+ovos-phal-plugin-mac = "ovos_phal_plugin_mac:MacOSPlugin"

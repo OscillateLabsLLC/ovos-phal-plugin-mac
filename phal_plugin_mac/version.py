@@ -1,4 +1,1 @@
-VERSION_MAJOR = 0
-VERSION_MINOR = 0
-VERSION_BUILD = 1
-VERSION_ALPHA = 0
+__version__ = "0.1.0"  # This gets updated automatically by release-please
