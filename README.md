@@ -1,5 +1,7 @@
 # PHAL-plugin-mac
 
+[![Status: Security Fixes Only](https://img.shields.io/badge/status-security%20fixes%20only-orange)](https://github.com/OscillateLabsLLC/.github/blob/main/SUPPORT_STATUS.md)
+
 Provides system specific commands to OVOS for Mac OS. Creates fake ducking for OCP/ovos-media, barge-in volume adjustment, GUI button compatability, and allows for management of OVOS services.
 
 Tested on Mac OS Sonoma 14.6.1, but should be valid for all currently supported Mac OS versions as of August 2024.
