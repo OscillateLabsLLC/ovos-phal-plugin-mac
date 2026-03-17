@@ -230,10 +230,3 @@ class MacOSPlugin(PHALPlugin):
         except subprocess.CalledProcessError as err:
             self.log.exception("OVOS service request restart failed", err)
             self.bus.emit(message.forward("system.mycroft.service.restart.failed"))
-
-
-if __name__ == "__main__":
-    from ovos_utils.fakebus import FakeBus
-
-    plugin = MacOSPlugin(bus=FakeBus())
-    print("BREAK")

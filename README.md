@@ -47,7 +47,7 @@ self.bus.on("system.shutdown", self.handle_shutdown_request)
 self.bus.on("system.configure.language", self.handle_configure_language_request)
 self.bus.on("system.mycroft.service.restart", self.handle_mycroft_restart_request)
 # Volume
-self.bus.on("mycroft.volume.get", self.handle_volume_set)
+self.bus.on("mycroft.volume.get", self.handle_volume_get)
 self.bus.on("mycroft.volume.set", self.handle_volume_set)
 self.bus.on("mycroft.volume.decrease", self.handle_volume_decrease)
 self.bus.on("mycroft.volume.increase", self.handle_volume_increase)
