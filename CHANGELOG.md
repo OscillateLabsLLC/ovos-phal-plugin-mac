@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.1.0...v0.1.1) (2026-03-17)
+
+
+### Bug Fixes
+
+* correct README bus event table and remove debug block ([9228dfe](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/9228dfede7d0a48146203f7308031fbed84e61fc))
+
 ## 0.1.0 (2024-12-26)
 
 
