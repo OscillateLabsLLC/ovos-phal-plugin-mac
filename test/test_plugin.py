@@ -328,3 +328,159 @@ def test_handle_mycroft_restart_request(mock_run, plugin, message, bus):
     mock_run.assert_any_call(["launchctl", "stop", "com.ovos.service"], check=True, capture_output=True, text=True)
     mock_run.assert_any_call(["launchctl", "start", "com.ovos.service"], check=True, capture_output=True, text=True)
     assert len(received_messages) == 1
+
+
+# ---- Brightness ----------------------------------------------------------
+
+
+@patch("phal_plugin_mac.shutil.which", return_value="/opt/homebrew/bin/brightness")
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_brightness_get(mock_run_command, _mock_which, plugin, message, bus):
+    received_messages = []
+    bus.on("phal.brightness.control.get.response", lambda m: received_messages.append(m))
+
+    mock_run_command.return_value = MagicMock(stdout="display 0: brightness 0.742188\n")
+    plugin.handle_brightness_get(message)
+
+    assert len(received_messages) == 1
+    assert received_messages[0].data["brightness"] == 74
+
+
+@patch("phal_plugin_mac.shutil.which", return_value=None)
+def test_handle_brightness_get_no_binary(_mock_which, plugin, message, bus):
+    received_messages = []
+    bus.on("phal.brightness.control.get.response", lambda m: received_messages.append(m))
+
+    plugin.handle_brightness_get(message)
+
+    assert received_messages == []
+
+
+@patch("phal_plugin_mac.shutil.which", return_value="/opt/homebrew/bin/brightness")
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_brightness_set(mock_run_command, _mock_which, plugin, bus):
+    received_messages = []
+    bus.on("phal.brightness.control.set.confirm", lambda m: received_messages.append(m))
+
+    mock_run_command.return_value = MagicMock(stdout="")
+    msg = Message("phal.brightness.control.set", {"brightness": 60})
+    plugin.handle_brightness_set(msg)
+
+    mock_run_command.assert_called_once_with(["brightness", "0.6000"])
+    assert len(received_messages) == 1
+    assert received_messages[0].data["brightness"] == 60
+
+
+@patch("phal_plugin_mac.shutil.which", return_value="/opt/homebrew/bin/brightness")
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_brightness_set_clamps(mock_run_command, _mock_which, plugin, bus):
+    mock_run_command.return_value = MagicMock(stdout="")
+    msg = Message("phal.brightness.control.set", {"brightness": 250})
+    plugin.handle_brightness_set(msg)
+    mock_run_command.assert_called_once_with(["brightness", "1.0000"])
+
+
+def test_handle_brightness_auto_dim_update_is_noop(plugin, message):
+    # Should not raise; behaviour is purely informational on macOS.
+    message.data["auto_dim"] = True
+    plugin.handle_brightness_auto_dim_update(message)
+
+
+# ---- Dark mode -----------------------------------------------------------
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_applescript")
+def test_handle_dark_mode_get(mock_run_applescript, plugin, message, bus):
+    received_messages = []
+    bus.on("system.display.dark_mode.get.response", lambda m: received_messages.append(m))
+
+    mock_run_applescript.return_value = "true"
+    plugin.handle_dark_mode_get(message)
+
+    assert len(received_messages) == 1
+    assert received_messages[0].data["enabled"] is True
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_applescript")
+def test_handle_dark_mode_set(mock_run_applescript, plugin, bus):
+    received_messages = []
+    bus.on("system.display.dark_mode.set.confirm", lambda m: received_messages.append(m))
+
+    mock_run_applescript.return_value = ""
+    msg = Message("system.display.dark_mode.set", {"enabled": True})
+    plugin.handle_dark_mode_set(msg)
+
+    assert len(received_messages) == 1
+    assert received_messages[0].data["enabled"] is True
+    # Confirm the AppleScript carries the literal "true".
+    args, _ = mock_run_applescript.call_args
+    assert "set dark mode to true" in args[0]
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_applescript")
+def test_handle_dark_mode_toggle(mock_run_applescript, plugin, message, bus):
+    received_messages = []
+    bus.on("system.display.dark_mode.set.confirm", lambda m: received_messages.append(m))
+
+    # First call (get) returns "false", second call (set) returns "" (success).
+    mock_run_applescript.side_effect = ["false", ""]
+    plugin.handle_dark_mode_toggle(message)
+
+    assert len(received_messages) == 1
+    assert received_messages[0].data["enabled"] is True
+
+
+# ---- Lock / sleep / screenshot ------------------------------------------
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_lock_request(mock_run_command, plugin, message, bus):
+    received_messages = []
+    bus.on("system.lock.confirm", lambda m: received_messages.append(m))
+
+    plugin.handle_lock_request(message)
+
+    mock_run_command.assert_called_once_with(["pmset", "displaysleepnow"])
+    assert len(received_messages) == 1
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_sleep_request(mock_run_command, plugin, message, bus):
+    received_messages = []
+    bus.on("system.sleep.confirm", lambda m: received_messages.append(m))
+
+    plugin.handle_sleep_request(message)
+
+    mock_run_command.assert_called_once_with(["pmset", "sleepnow"])
+    assert len(received_messages) == 1
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_screenshot_request_default_path(mock_run_command, plugin, message, bus, tmp_path):
+    received_messages = []
+    bus.on("system.screenshot.complete", lambda m: received_messages.append(m))
+
+    plugin.config["screenshot_dir"] = str(tmp_path)
+    plugin.handle_screenshot_request(message)
+
+    assert len(received_messages) == 1
+    path = received_messages[0].data["path"]
+    assert path.startswith(str(tmp_path))
+    assert path.endswith(".png")
+    mock_run_command.assert_called_once()
+    args, _ = mock_run_command.call_args
+    assert args[0][:2] == ["screencapture", "-x"]
+    assert args[0][2] == path
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_command")
+def test_handle_screenshot_request_explicit_path(mock_run_command, plugin, bus, tmp_path):
+    received_messages = []
+    bus.on("system.screenshot.complete", lambda m: received_messages.append(m))
+
+    target = str(tmp_path / "shot.png")
+    msg = Message("system.screenshot", {"path": target})
+    plugin.handle_screenshot_request(msg)
+
+    mock_run_command.assert_called_once_with(["screencapture", "-x", target])
+    assert received_messages[0].data["path"] == target
