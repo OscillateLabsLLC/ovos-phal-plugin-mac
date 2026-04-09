@@ -8,7 +8,7 @@ readme = "README.md"
 authors = [{ name = "Mike Gray", email = "mike@oscillatelabs.net" }]
 license = { text = "Apache-2.0" }
 keywords = ["ovos", "plugin", "voice", "assistant"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["version", "dependencies", "optional-dependencies", "description"]
 
 [project.urls]
