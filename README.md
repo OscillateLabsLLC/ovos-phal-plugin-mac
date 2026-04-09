@@ -72,7 +72,10 @@ Uses the canonical OVOS PHAL brightness namespace:
 > functionality is unaffected.
 >
 > The screenshot location can be customised via the `screenshot_dir` config
-> key (default `~/Pictures`).
+> key. The default is the XDG cache location
+> (`$XDG_CACHE_HOME/ovos/screenshots`, falling back to
+> `~/.cache/ovos/screenshots`) so the plugin behaves correctly when running
+> as a background service.
 
 ### Display: dark mode (Mac-specific extension)
 

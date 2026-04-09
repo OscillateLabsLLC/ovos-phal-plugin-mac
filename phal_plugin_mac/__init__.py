@@ -82,8 +82,18 @@ class MacOSPlugin(PHALPlugin):
 
     @property
     def screenshot_dir(self):
-        """Directory where screenshots are written. Defaults to ~/Pictures."""
-        return os.path.expanduser(self.config.get("screenshot_dir", "~/Pictures"))
+        """Directory where screenshots are written.
+
+        Defaults to the XDG cache location (`$XDG_CACHE_HOME/ovos/screenshots`,
+        falling back to `~/.cache/ovos/screenshots`) to match other OVOS
+        components and to behave correctly when the plugin runs as a
+        background service rather than as the logged-in user.
+        """
+        configured = self.config.get("screenshot_dir")
+        if configured:
+            return os.path.expanduser(configured)
+        xdg_cache = os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache")
+        return os.path.join(xdg_cache, "ovos", "screenshots")
 
     def _run_command(self, command, check=True):
         """Private method to run shell commands."""
@@ -291,6 +301,7 @@ class MacOSPlugin(PHALPlugin):
             os.makedirs(self.screenshot_dir, exist_ok=True)
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             path = os.path.join(self.screenshot_dir, f"ovos-screenshot-{stamp}.png")
+        self.log.info("Capturing screenshot to %s", path)
         try:
             # -x suppresses the camera-shutter sound.
             self._run_command(["screencapture", "-x", path])
