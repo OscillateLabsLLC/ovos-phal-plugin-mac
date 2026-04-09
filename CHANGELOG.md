@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.1.1...v0.2.0) (2026-04-09)
+
+
+### Features
+
+* add display, dark mode, lock, sleep and screenshot handlers ([b81edfc](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/b81edfc39943bc9f1d5164d4b95c78778d011293))
+* display, dark mode, lock, sleep and screenshot handlers ([abf973a](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/abf973ab4114152f6ba19a912263095ac4359075))
+
+
+### Bug Fixes
+
+* **screenshot:** default to XDG cache dir, log capture path ([34cba9d](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/34cba9d721322a7795377545664bd2191ac2f931))
+
 ## [0.1.1](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.1.0...v0.1.1) (2026-03-17)
 
 
