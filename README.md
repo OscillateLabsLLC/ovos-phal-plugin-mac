@@ -1,6 +1,6 @@
 # PHAL-plugin-mac
 
-[![Status: Security Fixes Only](https://img.shields.io/badge/status-security%20fixes%20only-orange)](https://github.com/OscillateLabsLLC/.github/blob/main/SUPPORT_STATUS.md)
+[![Status: Active](https://img.shields.io/badge/status-active-brightgreen)](https://github.com/OscillateLabsLLC/.github/blob/main/SUPPORT_STATUS.md)
 
 Provides system specific commands to OVOS for Mac OS. Creates fake ducking for OCP/ovos-media, barge-in volume adjustment, GUI button compatability, and allows for management of OVOS services.
 
@@ -36,25 +36,58 @@ Be sure to replace `<username>` with the username of the user running the OVOS i
 
 ## Handle bus events to interact with the OS
 
-```python
-# System
-self.bus.on("system.ntp.sync", self.handle_ntp_sync_request)
-self.bus.on("system.ssh.status", self.handle_ssh_status)
-self.bus.on("system.ssh.enable", self.handle_ssh_enable_request)
-self.bus.on("system.ssh.disable", self.handle_ssh_disable_request)
-self.bus.on("system.reboot", self.handle_reboot_request)
-self.bus.on("system.shutdown", self.handle_shutdown_request)
-self.bus.on("system.configure.language", self.handle_configure_language_request)
-self.bus.on("system.mycroft.service.restart", self.handle_mycroft_restart_request)
-# Volume
-self.bus.on("mycroft.volume.get", self.handle_volume_get)
-self.bus.on("mycroft.volume.set", self.handle_volume_set)
-self.bus.on("mycroft.volume.decrease", self.handle_volume_decrease)
-self.bus.on("mycroft.volume.increase", self.handle_volume_increase)
-self.bus.on("mycroft.volume.mute", self.handle_volume_mute)
-self.bus.on("mycroft.volume.unmute", self.handle_volume_unmute)
-self.bus.on("mycroft.volume.mute.toggle", self.handle_volume_mute_toggle)
-```
+### System
+
+- `system.ntp.sync`
+- `system.ssh.status`, `system.ssh.enable`, `system.ssh.disable`
+- `system.reboot`, `system.shutdown`
+- `system.configure.language`
+- `system.mycroft.service.restart`
+
+### Volume
+
+- `mycroft.volume.get`, `mycroft.volume.set`
+- `mycroft.volume.increase`, `mycroft.volume.decrease`
+- `mycroft.volume.mute`, `mycroft.volume.unmute`, `mycroft.volume.mute.toggle`
+
+### Display brightness
+
+Uses the canonical OVOS PHAL brightness namespace:
+
+- `phal.brightness.control.get` → replies with `phal.brightness.control.get.response` `{"brightness": 0..100}`
+- `phal.brightness.control.set` → `{"brightness": 0..100}`, replies with `phal.brightness.control.set.confirm`
+- `phal.brightness.control.sync` → re-emits `phal.brightness.control.get.response`
+- `phal.brightness.control.auto.dim.update` → no-op on macOS (auto-dim is OS-managed via System Settings → Lock Screen)
+
+> **Optional dependency:** macOS has no built-in command-line API for display
+> brightness. To enable brightness handling, install the small Homebrew
+> formula `brightness`:
+>
+> ```sh
+> brew install brightness
+> ```
+>
+> If `brightness` is not on `PATH`, the plugin still loads and the brightness
+> handlers become no-ops (a warning is logged on startup). All other
+> functionality is unaffected.
+>
+> The screenshot location can be customised via the `screenshot_dir` config
+> key (default `~/Pictures`).
+
+### Display: dark mode (Mac-specific extension)
+
+These events are not yet part of the canonical OVOS message spec; they are
+provided here so Mac users can drive macOS appearance from skills:
+
+- `system.display.dark_mode.get` → replies with `system.display.dark_mode.get.response` `{"enabled": bool}`
+- `system.display.dark_mode.set` → `{"enabled": bool}`, replies with `.set.confirm` / `.set.failed`
+- `system.display.dark_mode.toggle` → flips current state, replies with `.set.confirm` / `.set.failed`
+
+### Power & screen (Mac-specific extension)
+
+- `system.lock` → locks the screen (`pmset displaysleepnow`); replies with `system.lock.confirm` / `system.lock.failed`
+- `system.sleep` → sleeps the Mac (`pmset sleepnow`); replies with `system.sleep.confirm` / `system.sleep.failed`
+- `system.screenshot` → captures the full screen via `screencapture -x`. Optional `{"path": str}`; defaults to `~/Pictures/ovos-screenshot-<timestamp>.png`. Replies with `system.screenshot.complete` `{"path": str}` / `system.screenshot.failed`
 
 ## Credits
 
