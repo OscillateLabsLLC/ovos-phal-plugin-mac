@@ -45,3 +45,8 @@ ovos-phal-plugin-mac = "ovos_phal_plugin_mac:MacOSPlugin"
 
 [tool.uv]
 package = true
+# Pin setuptools below 81 — 81 removed --dry-run, 82 removed pkg_resources
+# entirely. The setuptools high-sev advisory (PackageIndex.download path
+# traversal) is build-time only via easy_install which we don't invoke.
+# Revisit once the OVOS dep chain confirms importlib.metadata-only paths.
+constraint-dependencies = ["setuptools<81"]
