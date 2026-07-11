@@ -162,6 +162,31 @@ def test_run_command(mock_run, plugin):
     assert result.stdout == "test output"
 
 
+@patch("subprocess.run")
+def test_run_applescript_success(mock_run, plugin):
+    mock_run.return_value = MagicMock(returncode=0, stdout="50\n", stderr="")
+    result = plugin._run_applescript("output volume of (get volume settings)")
+    mock_run.assert_called_once_with(
+        ["osascript", "-e", "output volume of (get volume settings)"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result == "50"
+
+
+@patch("subprocess.run")
+def test_run_applescript_error_code(mock_run, plugin):
+    mock_run.return_value = MagicMock(returncode=1, stdout="", stderr="boom")
+    assert plugin._run_applescript("bogus script") is None
+
+
+@patch("subprocess.run")
+def test_run_applescript_exception(mock_run, plugin):
+    mock_run.side_effect = OSError("osascript not found")
+    assert plugin._run_applescript("set volume output volume 50") is None
+
+
 @patch("phal_plugin_mac.MacOSPlugin._run_applescript")
 def test_get_volume(mock_run_applescript, plugin):
     mock_run_applescript.return_value = 50

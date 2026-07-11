@@ -5,7 +5,6 @@ import shutil
 import subprocess
 from datetime import datetime
 
-import osascript
 from ovos_bus_client import Message
 from ovos_plugin_manager.phal import PHALPlugin
 
@@ -103,8 +102,24 @@ class MacOSPlugin(PHALPlugin):
             self.log.exception("Error running command: %s", err)
 
     def _run_applescript(self, script):
-        """Private method to run AppleScript."""
-        return_code, out, err = osascript.run(script)
+        """Private method to run AppleScript via the system `osascript` binary.
+
+        Shells out to `/usr/bin/osascript -e <script>` directly rather than
+        depending on the third-party `osascript` package, whose transitive
+        `runcmd` dependency was pulled from PyPI and made the plugin
+        uninstallable (see OpenVoiceOS/ovos-installer#548).
+        """
+        try:
+            proc = subprocess.run(
+                ["osascript", "-e", script],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except Exception as err:
+            self.log.exception("Error running AppleScript: %s", err)
+            return
+        return_code, out, err = proc.returncode, proc.stdout.strip(), proc.stderr.strip()
         self.log.debug("Return code for %s was %s", script, return_code)
         if return_code and return_code > 0:
             self.log.error("Error code %s running AppleScript: %s", return_code, err)
