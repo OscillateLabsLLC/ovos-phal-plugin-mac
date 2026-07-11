@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.0...v0.2.1) (2026-07-11)
+
+
+### Bug Fixes
+
+* **deps:** drop osascript dep, call system osascript binary directly ([fd304b2](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/fd304b2b1f60c9b485429466f9e4ec5df93b67bd))
+* **deps:** drop osascript dep, call system osascript binary directly ([0a6cac4](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/0a6cac47403f27a0da9874ce168a82d9a4cf7478))
+
 ## [0.2.0](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.1.1...v0.2.0) (2026-04-09)
 
 
