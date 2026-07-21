@@ -1,9 +1,0 @@
-ovos-utils
-ovos-bus-client
-ovos-workshop
-ovos-plugin-manager
-# Transitive override: orjson 3.10.12 (pulled in by ovos-utils 0.6.0) ships
-# a malformed sdist pyproject.toml that newer uv refuses to parse, and there
-# are no cp314 wheels for it. 3.11.0+ has Python 3.14 wheels and a valid
-# pyproject. Drop once ovos-utils bumps its floor.
-orjson>=3.11.0

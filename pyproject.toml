@@ -9,7 +9,24 @@ authors = [{ name = "Mike Gray", email = "mike@oscillatelabs.net" }]
 license = { text = "Apache-2.0" }
 keywords = ["ovos", "plugin", "voice", "assistant"]
 requires-python = ">=3.10"
-dynamic = ["version", "dependencies", "optional-dependencies", "description"]
+dynamic = ["version", "description"]
+dependencies = [
+    "ovos-utils",
+    "ovos-bus-client",
+    "ovos-workshop",
+    "ovos-plugin-manager",
+    # Transitive override: orjson 3.10.12 (pulled in by ovos-utils 0.6.0) ships
+    # a malformed sdist pyproject.toml that newer uv refuses to parse, and there
+    # are no cp314 wheels for it. 3.11.0+ has Python 3.14 wheels and a valid
+    # pyproject. Drop once ovos-utils bumps its floor.
+    "orjson>=3.11.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
 
 [project.urls]
 Homepage = "https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac"
@@ -21,10 +38,6 @@ packages = ["ovos_phal_plugin_mac"]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-dependencies = { file = ["requirements/requirements.txt"] }
-optional-dependencies = { test = { file = [
-    "requirements/requirements-dev.txt",
-] } }
 description = { file = "README.md" }
 version = { attr = "phal_plugin_mac.version.__version__" }
 
@@ -37,7 +50,6 @@ ovos_phal_plugin_mac = [
     "vocab/*",
     "regex/*",
     "ui/*",
-    "requirements/*",
 ]
 
 [project.entry-points."ovos.plugin.phal"]
