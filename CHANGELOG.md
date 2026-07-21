@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.1...v0.2.2) (2026-07-21)
+
+
+### Bug Fixes
+
+* **deps:** consolidate dependency declarations into pyproject.toml ([#11](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/issues/11)) ([172437d](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/172437ded2b057d8377caf3438a546a6e96da4e7))
+
 ## [0.2.1](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.0...v0.2.1) (2026-07-11)
 
 
