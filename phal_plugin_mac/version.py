@@ -1,1 +1,1 @@
-__version__ = "0.2.2"  # This gets updated automatically by release-please
+__version__ = "0.2.3"  # This gets updated automatically by release-please
