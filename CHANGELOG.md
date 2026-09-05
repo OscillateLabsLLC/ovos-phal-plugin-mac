@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.2...v0.2.3) (2026-09-05)
+
+
+### Bug Fixes
+
+* **deps:** bump urllib3, requests, filelock, idna, setuptools, pytest, pygments ([#13](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/issues/13)) ([93c2138](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/93c2138256e2cbcb122c3db6309bbcc236802e27))
+
 ## [0.2.2](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.1...v0.2.2) (2026-07-21)
 
 
