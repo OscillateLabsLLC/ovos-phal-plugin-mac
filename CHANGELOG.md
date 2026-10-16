@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.4](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.3...v0.2.4) (2026-10-16)
+
+
+### Bug Fixes
+
+* **deps:** bump urllib3 to 2.8.0 ([56737e1](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/56737e14f4919fda3e009b0e6c76e33d80713287))
+* **deps:** bump urllib3 to 2.8.0 ([ada5517](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/ada5517ce0b08202dcb5412484ddb1ef1db5511d))
+
 ## [0.2.3](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.2...v0.2.3) (2026-09-05)
 
 
