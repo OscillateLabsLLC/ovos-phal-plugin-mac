@@ -132,8 +132,9 @@ def test_handle_ntp_sync_request_error(mock_run_command, plugin, message, bus):
     assert len(received_messages) == 1
 
 
+@patch.object(MacOSPlugin, "_run_applescript")
 @patch.object(MacOSPlugin, "_run_command")
-def test_handle_ssh_enable_request_error(mock_run_command, plugin, message, bus):
+def test_handle_ssh_enable_request_error(mock_run_command, mock_run_applescript, plugin, message, bus):
     mock_run_command.side_effect = subprocess.CalledProcessError(1, "ssh enable request error")
     received_messages = []
     bus.on("system.ssh.enable.failed", lambda m: received_messages.append(m))
@@ -143,8 +144,9 @@ def test_handle_ssh_enable_request_error(mock_run_command, plugin, message, bus)
     assert len(received_messages) == 1
 
 
+@patch.object(MacOSPlugin, "_run_applescript")
 @patch.object(MacOSPlugin, "_run_command")
-def test_handle_ssh_disable_request_error(mock_run_command, plugin, message, bus):
+def test_handle_ssh_disable_request_error(mock_run_command, mock_run_applescript, plugin, message, bus):
     mock_run_command.side_effect = subprocess.CalledProcessError(1, "ssh disable request error")
     received_messages = []
     bus.on("system.ssh.disable.failed", lambda m: received_messages.append(m))
