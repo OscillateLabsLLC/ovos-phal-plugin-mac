@@ -46,9 +46,18 @@ Be sure to replace `<username>` with the username of the user running the OVOS i
 
 ### Volume
 
-- `mycroft.volume.get`, `mycroft.volume.set`
-- `mycroft.volume.increase`, `mycroft.volume.decrease`
-- `mycroft.volume.mute`, `mycroft.volume.unmute`, `mycroft.volume.mute.toggle`
+On the bus, `percent` is always a fraction from `0.0` to `1.0`, the same as
+the rest of OVOS (ovos-skill-volume, ovos-dinkum-listener, the ALSA PHAL
+plugin). The plugin converts to and from the macOS 0-100 scale internally.
+
+- `mycroft.volume.get` → replies with `mycroft.volume.get.response` `{"percent": 0.0..1.0, "muted": bool}`
+- `mycroft.volume.set` → `{"percent": 0.0..1.0}` (default `0.5`); replies with `mycroft.volume.set.confirm` `{"percent": 0.0..1.0}`. Values outside `0.0..1.0` are clamped and a warning is logged.
+- `mycroft.volume.increase`, `mycroft.volume.decrease` → optional `{"percent": 0.0..1.0}` step; replies with `mycroft.volume.set.confirm` `{"percent": 0.0..1.0}`
+- `mycroft.volume.mute`, `mycroft.volume.unmute`, `mycroft.volume.mute.toggle` → replies with `mycroft.volume.mute.confirm` `{"muted": bool}`
+
+Config key `volume_change_interval` (default `10`) is the increase/decrease
+step when the message has no `percent`. For backwards compatibility it stays
+on the **0-100** scale (`10` means 10 points), not the bus fraction.
 
 ### Display brightness
 

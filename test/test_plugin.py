@@ -208,45 +208,161 @@ def test_is_muted(mock_run_applescript, plugin):
     mock_run_applescript.assert_called_once_with("output muted of (get volume settings)")
 
 
-@patch("phal_plugin_mac.MacOSPlugin._set_volume")
-def test_handle_volume_set(mock_set_volume, plugin, message, bus):
-    received_messages = []
-    bus.on("mycroft.volume.set.confirm", lambda m: received_messages.append(m))
+# ---- Volume: OVOS bus speaks 0.0-1.0 fractions, AppleScript speaks 0-100 --
 
-    message.data["percent"] = 60
+
+def _collect(bus, event):
+    received = []
+    bus.on(event, lambda m: received.append(m))
+    return received
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_applescript")
+def test_handle_volume_get_replies_fraction_and_muted(
+    mock_run_applescript, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.get.response")
+    mock_run_applescript.side_effect = ["30", "true"]
+
+    plugin.handle_volume_get(message)
+
+    assert len(received) == 1
+    assert received[0].data == {"percent": 0.3, "muted": True}
+
+
+@patch("phal_plugin_mac.MacOSPlugin._is_muted", return_value=False)
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=0)
+def test_handle_volume_get_at_zero_still_replies(
+    _mock_get, _mock_muted, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.get.response")
+
+    plugin.handle_volume_get(message)
+
+    assert len(received) == 1
+    assert received[0].data == {"percent": 0.0, "muted": False}
+
+
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=None)
+def test_handle_volume_get_failure_logs_and_emits_nothing(
+    _mock_get, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.get.response")
+
+    with patch.object(plugin, "log") as mock_log:
+        plugin.handle_volume_get(message)
+
+    assert received == []
+    mock_log.error.assert_called_once()
+
+
+@patch("phal_plugin_mac.MacOSPlugin._run_applescript")
+def test_handle_volume_set_converts_fraction(mock_run_applescript, plugin, bus):
+    received = _collect(bus, "mycroft.volume.set.confirm")
+
+    plugin.handle_volume_set(Message("mycroft.volume.set", {"percent": 0.5}))
+
+    mock_run_applescript.assert_called_once_with("set volume output volume 50")
+    assert len(received) == 1
+    assert received[0].data["percent"] == 0.5
+
+
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_set_clamps_out_of_range(mock_set_volume, plugin, bus):
+    received = _collect(bus, "mycroft.volume.set.confirm")
+
+    with patch.object(plugin, "log") as mock_log:
+        plugin.handle_volume_set(Message("mycroft.volume.set", {"percent": 1.5}))
+
+    mock_set_volume.assert_called_once_with(100)
+    mock_log.warning.assert_called_once()
+    assert received[0].data["percent"] == 1.0
+
+
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_set_defaults_to_half(mock_set_volume, plugin, message):
     plugin.handle_volume_set(message)
-
-    mock_set_volume.assert_called_once_with(60)
-    assert len(received_messages) == 1
-    assert received_messages[0].data["percent"] == 60
+    mock_set_volume.assert_called_once_with(50)
 
 
-@patch("phal_plugin_mac.MacOSPlugin._get_volume")
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=30)
 @patch("phal_plugin_mac.MacOSPlugin._set_volume")
-def test_handle_volume_decrease(mock_set_volume, mock_get_volume, plugin, message, bus):
-    received_messages = []
-    bus.on("mycroft.volume.set.confirm", lambda m: received_messages.append(m))
+def test_handle_volume_increase_honours_incoming_step(
+    mock_set_volume, _mock_get, plugin, bus
+):
+    received = _collect(bus, "mycroft.volume.set.confirm")
 
-    mock_get_volume.return_value = 50
-    plugin.handle_volume_decrease(message)
+    plugin.handle_volume_increase(Message("mycroft.volume.increase", {"percent": 0.05}))
 
-    mock_set_volume.assert_called_once_with(40)
-    assert len(received_messages) == 1
-    assert received_messages[0].data["percent"] == 40
+    mock_set_volume.assert_called_once_with(35)
+    assert received[0].data["percent"] == 0.35
 
 
-@patch("phal_plugin_mac.MacOSPlugin._get_volume")
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=50)
 @patch("phal_plugin_mac.MacOSPlugin._set_volume")
-def test_handle_volume_increase(mock_set_volume, mock_get_volume, plugin, message, bus):
-    received_messages = []
-    bus.on("mycroft.volume.set.confirm", lambda m: received_messages.append(m))
+def test_handle_volume_increase_uses_config_interval(
+    mock_set_volume, _mock_get, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.set.confirm")
 
-    mock_get_volume.return_value = 50
     plugin.handle_volume_increase(message)
 
     mock_set_volume.assert_called_once_with(60)
-    assert len(received_messages) == 1
-    assert received_messages[0].data["percent"] == 60
+    assert received[0].data["percent"] == 0.6
+
+
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=95)
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_increase_clamps_at_max(
+    mock_set_volume, _mock_get, plugin, message
+):
+    plugin.handle_volume_increase(message)
+    mock_set_volume.assert_called_once_with(100)
+
+
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=50)
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_decrease_uses_config_interval(
+    mock_set_volume, _mock_get, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.set.confirm")
+
+    plugin.handle_volume_decrease(message)
+
+    mock_set_volume.assert_called_once_with(40)
+    assert received[0].data["percent"] == 0.4
+
+
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=5)
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_decrease_clamps_at_zero(mock_set_volume, _mock_get, plugin, bus):
+    received = _collect(bus, "mycroft.volume.set.confirm")
+
+    plugin.handle_volume_decrease(Message("mycroft.volume.decrease", {"percent": 0.1}))
+
+    mock_set_volume.assert_called_once_with(0)
+    assert received[0].data["percent"] == 0.0
+
+
+@patch("phal_plugin_mac.MacOSPlugin._get_volume", return_value=None)
+@patch("phal_plugin_mac.MacOSPlugin._set_volume")
+def test_handle_volume_change_without_current_level_does_nothing(
+    mock_set_volume, _mock_get, plugin, message, bus
+):
+    received = _collect(bus, "mycroft.volume.set.confirm")
+
+    plugin.handle_volume_increase(message)
+
+    mock_set_volume.assert_not_called()
+    assert received == []
+
+
+def test_bus_percent_round_trips_through_consumer_truncation(plugin):
+    for level in range(101):
+        fraction = plugin._to_bus_percent(level)
+        assert 0.0 <= fraction <= 1.0
+        assert int(fraction * 100) == level, f"level {level} -> {fraction!r}"
+        assert plugin._from_bus_percent(fraction) == level
 
 
 @patch("phal_plugin_mac.MacOSPlugin._set_mute")

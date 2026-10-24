@@ -1,5 +1,6 @@
 """macOS PHAL plugin for OVOS."""
 
+import math
 import os
 import shutil
 import subprocess
@@ -7,6 +8,15 @@ from datetime import datetime
 
 from ovos_bus_client import Message
 from ovos_plugin_manager.phal import PHALPlugin
+
+PERCENT_SCALE = 100
+MIN_VOLUME = 0
+MAX_VOLUME = 100
+MIN_FRACTION = 0.0
+MAX_FRACTION = 1.0
+DEFAULT_SET_FRACTION = 0.5
+VOLUME_UP = 1
+VOLUME_DOWN = -1
 
 
 class MacOSPlugin(PHALPlugin):
@@ -76,7 +86,12 @@ class MacOSPlugin(PHALPlugin):
 
     @property
     def volume_change_interval(self):
-        """Get the volume change interval percentage. Defaults to 10."""
+        """Default increase/decrease step on the 0-100 scale. Defaults to 10.
+
+        Unlike bus `percent` values (0.0-1.0 fractions), this config key keeps
+        its original 0-100 meaning for backwards compatibility. It applies only
+        when the incoming message carries no `percent` step.
+        """
         return self.config.get("volume_change_interval", 10)
 
     @property
@@ -326,38 +341,98 @@ class MacOSPlugin(PHALPlugin):
 
     # ---- Volume --------------------------------------------------------------
 
+    # The bus speaks the OVOS convention: `percent` is a fraction 0.0-1.0.
+    # AppleScript speaks whole 0-100 levels. These two helpers are the only
+    # place the scale is converted; handlers call them at the bus boundary.
+
+    def _to_bus_percent(self, level):
+        """Convert a 0-100 macOS volume level to an OVOS bus fraction 0.0-1.0.
+
+        Consumers (ovos-skill-volume, ovos-dinkum-listener) read the reply as
+        `int(percent * 100)`, which truncates. Plain `level / 100` breaks that
+        for some levels (29 / 100 * 100 == 28.999...), so the fraction is
+        nudged up to the next float when truncation would lose a step.
+        """
+        fraction = level / PERCENT_SCALE
+        if int(fraction * PERCENT_SCALE) < level:
+            fraction = math.nextafter(fraction, MAX_FRACTION)
+        return fraction
+
+    def _from_bus_percent(self, fraction):
+        """Convert an OVOS bus fraction 0.0-1.0 to a whole 0-100 macOS level.
+
+        Out-of-range values are clamped to [0, 1] and logged; no attempt is
+        made to guess whether a caller sent the 0-100 scale by mistake.
+        """
+        clamped = max(MIN_FRACTION, min(MAX_FRACTION, float(fraction)))
+        if clamped != fraction:
+            self.log.warning(
+                "Volume percent %s is outside the OVOS 0.0-1.0 range; clamped to %s",
+                fraction,
+                clamped,
+            )
+        return round(clamped * PERCENT_SCALE)
+
+    def _volume_step(self, message: Message):
+        """Return the 0-100 step for increase/decrease.
+
+        An incoming `percent` fraction wins (sign ignored, the event name sets
+        the direction); otherwise the `volume_change_interval` config value,
+        which stays on the 0-100 scale for backwards compatibility.
+        """
+        requested = message.data.get("percent")
+        if requested is None:
+            return self.volume_change_interval
+        return self._from_bus_percent(abs(requested))
+
+    def _change_volume(self, message: Message, direction):
+        """Move the volume by one step in `direction` (+1 or -1) and confirm."""
+        current = self._get_volume()
+        if current is None:
+            self.log.error("Error getting Mac volume; cannot change it")
+            return
+        target = current + direction * self._volume_step(message)
+        new_level = max(MIN_VOLUME, min(MAX_VOLUME, target))
+        self._set_volume(new_level)
+        self.bus.emit(
+            message.forward(
+                "mycroft.volume.set.confirm",
+                {"percent": self._to_bus_percent(new_level)},
+            )
+        )
+
     def handle_volume_get(self, message: Message):
-        """Handle the volume get request."""
-        volume = self._get_volume()
-        if volume:
-            self.bus.emit(message.reply("mycroft.volume.get.response", {"percent": volume}))
-        else:
+        """Handle mycroft.volume.get; reply percent as a 0.0-1.0 fraction plus muted."""
+        level = self._get_volume()
+        if level is None:
             self.log.error("Error getting Mac volume")
+            return
+        self.bus.emit(
+            message.reply(
+                "mycroft.volume.get.response",
+                {"percent": self._to_bus_percent(level), "muted": self._is_muted()},
+            )
+        )
 
     def handle_volume_set(self, message: Message):
-        """Handle the volume set request."""
-        volume = message.data.get("percent", 50)
-        volume = max(0, min(100, volume))  # Ensure volume is between 0 and 100
-        self._set_volume(volume)
-        self.bus.emit(message.forward("mycroft.volume.set.confirm", {"percent": volume}))
+        """Handle mycroft.volume.set; `percent` is a 0.0-1.0 fraction."""
+        level = self._from_bus_percent(
+            message.data.get("percent", DEFAULT_SET_FRACTION)
+        )
+        self._set_volume(level)
+        self.bus.emit(
+            message.forward(
+                "mycroft.volume.set.confirm", {"percent": self._to_bus_percent(level)}
+            )
+        )
 
     def handle_volume_decrease(self, message: Message):
-        """Handle the volume decrease request."""
-        current_volume = self._get_volume()
-        new_volume = max(
-            0, current_volume - self.volume_change_interval
-        )  # Decrease by volume_change_interval, but not below 0
-        self._set_volume(new_volume)
-        self.bus.emit(message.forward("mycroft.volume.set.confirm", {"percent": new_volume}))
+        """Handle mycroft.volume.decrease; optional `percent` step is a fraction."""
+        self._change_volume(message, VOLUME_DOWN)
 
     def handle_volume_increase(self, message: Message):
-        """Handle the volume increase request."""
-        current_volume = self._get_volume()
-        new_volume = min(
-            100, current_volume + self.volume_change_interval
-        )  # Increase by volume_change_interval, but not above 100
-        self._set_volume(new_volume)
-        self.bus.emit(message.forward("mycroft.volume.set.confirm", {"percent": new_volume}))
+        """Handle mycroft.volume.increase; optional `percent` step is a fraction."""
+        self._change_volume(message, VOLUME_UP)
 
     def handle_volume_mute(self, message: Message):
         """Handle the volume mute request."""
