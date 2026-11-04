@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.5](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.4...v0.2.5) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deps:** bump certifi to 2026.10.23 ([5e6f318](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/5e6f318faedf72e9494567b34453cccddfe13767))
+* **deps:** bump certifi to 2026.10.23 ([216b74a](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/commit/216b74a80ad52805f2e104d476d669eb3bd67f6a))
+
 ## [0.2.4](https://github.com/OscillateLabsLLC/ovos-phal-plugin-mac/compare/v0.2.3...v0.2.4) (2026-10-16)
 
 
